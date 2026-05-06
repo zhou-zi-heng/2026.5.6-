@@ -271,7 +271,19 @@ function renderMs(){
     });
     a.innerHTML=h;a.scrollTop=a.scrollHeight;
 }
-function rMD(t){try{return marked.parse(t)}catch(e){return esc(t)}}
+function rMD(t){
+    try{
+        // 用 渲染
+        let html=marked.parse(t);
+        // 安全检查：如果纯文本长度损失超过20%，说明 marked 误吞了内容，回退纯文本
+        const plainLen.replace(/<[^>]*>/g,'').replace(/&[a-z]+;/g,'x').length;
+        const srcLen=t.length;
+        if(plainLen < srcLen*0.8){
+            return '<p style="white-space:pre-wrap">'+esc(t)+'</p>';
+        }
+        return html;
+    }catch(e){
+        return '<p style="white-space:pre-wrap">'+esc(t)+'</p>';
 
 function newChat(r=true){const id=gId();S.chats[id]={title:'新对话',messages:[],session_knowledge:[],system_prompt:'',is_pinned:false,is_archived:false};S.currentChatId=id;rOff=0;save();if(r){render();closeSB()}}
 function swC(id){S.currentChatId=id;rOff=0;save();render();closeSB()}
