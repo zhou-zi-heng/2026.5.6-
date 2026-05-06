@@ -165,7 +165,7 @@
                 <div style="position:relative">
                     <button class="att-btn" id="attBtn" onclick="togAtt()">📎</button>
                     <div class="att-pan" id="attPan">
-                        <div class="fg" style="margin-bottom:6px"><label>上传文件</label><input type="file" id="attIn" accept=".txt,.md,.py,.json,.csv,.log,.pdf,.docx" onchange="onAtt(this)"></div>
+                        <div class="fg" style="margin-bottom:6px"><label>上传文件</label><input type="file" id="attIn" accept=".txt,.md,.py,.json,.csv,.log,.pdf,.docx,.png,.jpg,.jpeg,.gif,.webp,.xml,.yaml,.yml,.toml,.ini,.conf,.html,.htm,.css,.js,.ts,.jsx,.tsx,.java,.c,.cpp,.go,.rs,.rb,.php,.swift,.kt,.sql,.sh,.bat" onchange="onAtt(this)"></div>
                         <div class="pt"><input type="checkbox" id="attCont"><label for="attCont">🔄 持续参考</label></div>
                         <div id="attInfo" style="display:none;font-size:11px;color:var(--pri);margin-top:4px"></div>
                     </div>
@@ -177,7 +177,7 @@
     </div>
 </div>
 <div class="mo" id="mo-set"><div class="md"><div class="md-h"><h2>⚙️ 引擎配置</h2><button class="md-x" onclick="closeM('set')">×</button></div><div class="md-b"><div class="tabs" id="engTabs"></div><button class="btn btn-s" onclick="addEng()" style="margin-bottom:10px">➕ 新增引擎</button><div id="engForm"></div></div></div></div>
-<div class="mo" id="mo-cs"><div class="md"><div class="md-h"><h2>🎛️ 会话设置</h2><button class="md-x" onclick="closeM('cs')">×</button></div><div class="md-b"><div class="fg"><label>🎭 System Prompt</label><textarea id="spIn" rows="5" placeholder="设定此会话的全局人设..." onchange="updSP(this.value)"></textarea></div><div class="fg"><label>📚 全局知识库文件 (TXT/MD/PY/JSON/CSV/LOG/PDF/DOCX)</label><input type="file" id="kbIn" accept=".txt,.md,.py,.json,.csv,.log,.pdf,.docx" onchange="addKB(this)"><div id="kbList" style="margin-top:8px"></div></div></div></div></div>
+<div class="mo" id="mo-cs"><div class="md"><div class="md-h"><h2>🎛️ 会话设置</h2><button class="md-x" onclick="closeM('cs')">×</button></div><div class="md-b"><div class="fg"><label>🎭 System Prompt</label><textarea id="spIn" rows="5" placeholder="设定此会话的全局人设..." onchange="updSP(this.value)"></textarea></div><div class="fg"><label>📚 全局知识库文件 (TXT/MD/PY/JSON/CSV/LOG/PDF/DOCX)</label><input type="file" id="kbIn" accept=".txt,.md,.py,.json,.csv,.log,.pdf,.docx,.png,.jpg,.jpeg,.gif,.webp,.xml,.yaml,.yml,.toml,.ini,.conf,.html,.htm,.css,.js,.ts,.jsx,.tsx,.java,.c,.cpp,.go,.rs,.rb,.php,.swift,.kt,.sql,.sh,.bat" onchange="addKB(this)"><div id="kbList" style="margin-top:8px"></div></div></div></div></div>
 <div class="mo" id="mo-exp"><div class="md"><div class="md-h"><h2>📥 导出对话</h2><button class="md-x" onclick="closeM('exp')">×</button></div><div class="md-b"><div class="fg"><label>导出模式</label><select id="expFmt" onchange="updExp()"><option value="full">完整记录 (含提问)</option><option value="pure">纯享正文 (仅AI回答)</option></select></div><div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><button class="btn btn-s" onclick="eTxt()">📄 TXT</button><button class="btn btn-s" onclick="eHtml()">🎨 HTML</button><button class="btn btn-s" onclick="eDoc()">📘 Word</button></div><div class="fg"><label>⚠️ 防拦截备用复制区</label><textarea id="expTA" rows="6" style="font-size:12px" readonly></textarea><button class="btn btn-s" onclick="cpExp()" style="margin-top:6px">📋 全选复制</button></div></div></div></div>
 <div class="mo" id="mo-snap"><div class="md"><div class="md-h"><h2>📦 快照迁移</h2><button class="md-x" onclick="closeM('snap')">×</button></div><div class="md-b"><p style="font-size:12px;color:var(--text2);margin-bottom:12px">💡 定期导出备份，防止数据丢失。兼容旧版 Streamlit 快照。</p><button class="btn btn-p btn-b" onclick="eSnap()" style="margin-bottom:10px">📥 导出全量快照</button><div class="fg"><label>📂 导入快照</label><input type="file" accept=".json" onchange="iSnap(this)"></div><div id="iosW" style="display:none;padding:10px;background:#fff3cd;border-radius:8px;font-size:12px;color:#856404;margin-top:10px">⚠️ iOS Safari 可能自动清理数据，请定期导出快照。</div></div></div></div>
 <div class="tc" id="tc"></div>
@@ -218,7 +218,21 @@ function load(){
 
 function save(){try{localStorage.setItem(SK,JSON.stringify(S))}catch(e){}}
 
-async function parseF(f){const n=f.name.toLowerCase();if(n.endsWith('.pdf'))return await pPDF(f);if(n.endsWith('.docx'))return await pDOCX(f);return await rTxt(f)}
+async function parseF(f){
+    const n=f.name.toLowerCase();
+    if(n.endsWith('.pdf'))return await pPDF(f);
+    if(n.endsWith('.docx'))return await pDOCX(f);
+    if(/\.(png|jpg|jpeg|gif|webp)$/.test(n))return await pImg(f);
+    return await rTxt(f);
+}
+function pImg(f){
+    return new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=()=>res(r.result);
+        r.onerror=()=>rej(r.error);
+        r.readAsDataURL(f);
+    });
+}
 function rTxt(f){return new Promise((r,j)=>{const x=new FileReader();x.onload=()=>r(x.result);x.onerror=()=>j(x.error);x.readAsText(f)})}
 async function pPDF(f){try{const b=await f.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:b}).promise;let t='';for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const c=await pg.getTextContent();t+=c.items.map(x=>x.str).join(' ')+'\n'}return t}catch(e){return'[PDF错误:'+e.message+']'}}
 async function pDOCX(f){try{const b=await f.arrayBuffer();return(await mammoth.extractRawText({arrayBuffer:b})).value}catch(e){return'[DOCX错误:'+e.message+']'}}
@@ -303,7 +317,37 @@ async function doAPI(){
     const apiMsgs=[];
     if(c.system_prompt&&c.system_prompt.trim())apiMsgs.push({role:'system',content:c.system_prompt.trim()});
     if(c.session_knowledge&&c.session_knowledge.length){const kb=c.session_knowledge.map(k=>`--- ${k.filename} ---\n${k.content}`).join('\n\n');apiMsgs.push({role:'system',content:'【全局参考】：\n'+kb})}
-    c.messages.forEach((m,i)=>{if(m.role==='system')return;let ct=m.content;if(m.files&&m.files.length){const ft=m.files.filter(f=>f.continuous||i===c.messages.length-1).map(f=>`--- ${f.filename} ---\n${f.content}`).join('\n');if(ft)ct='【附件】\n'+ft+'\n\n【指令】\n'+ct}apiMsgs.push({role:m.role,content:ct})});
+    c.messages.forEach((m,i)=>{
+    if(m.role==='system')return;
+    let ct=m.content;
+    let imgFiles=[];
+    let txtFiles=[];
+
+    if(m.files&&m.files.length){
+        m.files.filter(f=>f.continuous||i===c.messages.length-1).forEach(f=>{
+            if(f.content&&f.content.startsWith('data:image')){
+                imgFiles.push(f);
+            }else{
+                txtFiles.push(f);
+            }
+        });
+        if(txtFiles.length){
+            const ft=txtFiles.map(f=>`--- ${f.filename} ---\n${f.content}`).join('\n');
+            ct='【附件】\n'+ft+'\n\n【指令】\n'+ct;
+        }
+    }
+
+    if(imgFiles.length){
+        // 多模态格式：文本 + 图片
+        const parts=[{type:'text',text:ct}];
+        imgFiles.forEach(f=>{
+            parts.push({type:'image_url',image_url:{url:f.content,detail:'auto'}});
+        });
+        apiMsgs.push({role:m.role,content:parts});
+    }else{
+        apiMsgs.push({role:m.role,content:ct});
+    }
+});
 
     const params={model:p.model,messages:apiMsgs,stream:true};
     if(p.use_temperature)params.temperature=p.temperature;
