@@ -1070,6 +1070,14 @@ async function iSnap(inputEl) {
         '✨ 两种模式都会智能保护你本地已有的 API Key'
     );
     try {
+        // ★ 导入前自动备份当前数据（可回滚）
+        await DB.setSetting('pre_import_backup', {
+            state: JSON.parse(JSON.stringify(S)),
+            time: Date.now(),
+            reason: mode ? 'replace' : 'merge',
+        });
+        console.log('[Snapshot] 已自动备份当前数据（可通过"恢复"按钮回滚）');
+
         const { state: importedState, source } = await Snapshot.importFromFile(file);
         let finalState;
         if (mode) {
@@ -1094,6 +1102,38 @@ async function iSnap(inputEl) {
         toast('导入失败：' + e.message, 'er');
     }
     inputEl.value = '';
+}
+
+
+/* ============================================================
+   ===== 恢复导入前的备份 ======================================
+   ============================================================ */
+async function restorePreImport() {
+    try {
+        const backup = await DB.getSetting('pre_import_backup', null);
+        if (!backup || !backup.state) {
+            toast('没有可恢复的备份', 'er');
+            return;
+        }
+        const timeStr = new Date(backup.time).toLocaleString();
+        if (!confirm(
+            '⚠️ 确认恢复到上次导入前的状态？\n\n' +
+            '备份时间：' + timeStr + '\n' +
+            '当时操作：' + (backup.reason === 'replace' ? '替换导入' : '合并导入') + '\n\n' +
+            '恢复后当前数据将被覆盖！'
+        )) return;
+
+        S = backup.state;
+        if (!S.profiles[S.currentEngId]) S.currentEngId = Object.keys(S.profiles)[0] || 'zenmux';
+        await saveNow();
+        await Snapshot.snapNow(S);
+        renderAll();
+        toast('✅ 已恢复到导入前的状态（' + timeStr + '）');
+        closeM('snap');
+    } catch (e) {
+        console.error('[Restore]', e);
+        toast('恢复失败：' + e.message, 'er');
+    }
 }
 
 /* ============================================================
